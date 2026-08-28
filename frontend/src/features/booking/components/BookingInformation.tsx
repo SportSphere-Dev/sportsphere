@@ -1,68 +1,87 @@
-import { Link } from 'react-router-dom';
-import { ArrowRight, CalendarRange, Clock, ShieldAlert } from 'lucide-react';
-import { Button, Card } from '@/components/common';
+import { CalendarRange, CreditCard, Shield } from 'lucide-react';
+import { Card } from '@/components/common';
+import { FadeIn, StaggerContainer, StaggerItem } from '@/components/motion';
+import CancellationPolicyVisual from './CancellationPolicyVisual';
 
 const bookingRules = [
   {
-    title: '5-Day Booking Window',
-    description: 'Slot availability opens 5 days in advance of the match date.',
+    category: 'Booking & Timing',
     icon: CalendarRange,
+    items: [
+      'Advance Window: Slots open 5 days ahead of match date.',
+      'Lead Time: Book at least 30 minutes before slot start.',
+      'Duration: Reserve 1-hour sessions up to 5 consecutive hours.',
+      'Player Limit: 15 players standard capacity.',
+    ],
   },
   {
-    title: '30-Minute Lead Time',
-    description: 'Bookings must be confirmed at least 30 minutes before the slot starts.',
-    icon: Clock,
+    category: 'Payment & Slot Hold',
+    icon: CreditCard,
+    items: [
+      '5-Minute Hold: Selected slot is held during checkout.',
+      'Zero Double-Booking: Instant reservation confirmation.',
+      'Auto-Release: Expired checkout immediately frees the slot.',
+      'Dynamic Pricing: Peak evenings and weekend rates apply.',
+    ],
   },
   {
-    title: 'Max 5-Hour Duration',
-    description: 'Single match sessions or consecutive blocks can be booked up to 5 hours.',
-    icon: ShieldAlert,
+    category: 'Account & Security',
+    icon: Shield,
+    items: [
+      'Verification: Phone & Email OTP verification required.',
+      'Group Lead: One customer creates booking for the group.',
+      'Reminders: Automated match notifications sent prior to slot.',
+      'Maintenance: Slots blocked up to 2 days ahead for upkeep.',
+    ],
   },
 ];
 
 export default function BookingInformation() {
   return (
-    <section className="bg-slate-950 py-12 sm:py-16">
+    <section className="border-b border-slate-800/80 bg-slate-950 py-16 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 sm:p-10 shadow-xl shadow-black/40">
-          <div className="max-w-xl">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-emerald-400">Reservation Policies</h2>
-            <p className="mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">
-              Booking Guidelines
+        <FadeIn direction="up">
+          <div className="max-w-2xl">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-emerald-400">Policies & Rules</h2>
+            <p className="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+              Venue Guidelines & Policies
             </p>
-            <p className="mt-2 text-xs text-slate-400 sm:text-sm">
-              Review operational guidelines before choosing your preferred time slots.
+            <p className="mt-3 text-sm text-slate-400">
+              Clear operational standards governing slots, checkouts, and match etiquette.
             </p>
           </div>
+        </FadeIn>
 
-          <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
-            {bookingRules.map((rule) => {
-              const Icon = rule.icon;
-              return (
-                <Card key={rule.title} className="border-slate-800/80 bg-slate-950/60 p-5">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-slate-800 p-2 text-emerald-400" aria-hidden="true">
-                      <Icon size={18} />
+        {/* Grouped Rules Grid */}
+        <StaggerContainer className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3">
+          {bookingRules.map((group) => {
+            const Icon = group.icon;
+            return (
+              <StaggerItem key={group.category}>
+                <Card variant="interactive" className="flex h-full flex-col p-6">
+                  <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                    <div className="rounded-xl bg-emerald-500/10 p-2.5 text-emerald-400" aria-hidden="true">
+                      <Icon size={20} />
                     </div>
-                    <h3 className="text-sm font-semibold text-white">{rule.title}</h3>
+                    <h3 className="text-sm font-semibold text-white">{group.category}</h3>
                   </div>
-                  <p className="mt-3 text-xs leading-relaxed text-slate-400">{rule.description}</p>
-                </Card>
-              );
-            })}
-          </div>
 
-          <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-slate-800/80 pt-6 sm:flex-row">
-            <p className="text-xs text-slate-400 text-center sm:text-left">
-              Slots are temporarily held for 5 minutes during checkout to ensure zero double-booking.
-            </p>
-            <Link to="/booking" className="w-full sm:w-auto">
-              <Button size="md" className="w-full sm:w-auto" rightIcon={<ArrowRight size={16} aria-hidden="true" />}>
-                View Available Slots
-              </Button>
-            </Link>
-          </div>
-        </div>
+                  <ul className="mt-4 space-y-2.5 text-xs text-slate-400">
+                    {group.items.map((item, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" aria-hidden="true" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </Card>
+              </StaggerItem>
+            );
+          })}
+        </StaggerContainer>
+
+        {/* Cancellation Visual Timeline */}
+        <CancellationPolicyVisual />
       </div>
     </section>
   );
