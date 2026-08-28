@@ -1,15 +1,35 @@
 import { useState } from 'react';
-import { NavLink, Link } from 'react-router-dom';
-import { Menu, X, Activity, CalendarDays, MapPin, User, LogIn } from 'lucide-react';
-import { Button } from '@/components/common';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
+import {
+  Menu,
+  X,
+  Activity,
+  CalendarDays,
+  MapPin,
+  User as UserIcon,
+  LogIn,
+  LogOut,
+  ShieldAlert,
+  UserCheck,
+} from 'lucide-react';
+import { Button, Badge } from '@/components/common';
+import { useAuth } from '@/context';
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    setIsMobileMenuOpen(false);
+    navigate('/login');
+  };
 
   const navLinks = [
     { label: 'Venue', path: '/venue', icon: MapPin },
     { label: 'Book Slot', path: '/booking', icon: CalendarDays },
-    { label: 'My Bookings', path: '/my-bookings', icon: User },
+    ...(isAuthenticated ? [{ label: 'My Bookings', path: '/my-bookings', icon: UserIcon }] : []),
   ];
 
   const getNavLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -49,15 +69,55 @@ export default function Navbar() {
               </NavLink>
             );
           })}
+
+          {user?.role === 'admin' && (
+            <NavLink key="/admin" to="/admin" className={getNavLinkClass}>
+              <ShieldAlert size={16} className="text-amber-400" aria-hidden="true" />
+              <span className="text-amber-300">Admin Panel</span>
+            </NavLink>
+          )}
         </nav>
 
-        {/* Desktop CTA */}
+        {/* Desktop Auth State */}
         <div className="hidden md:flex items-center gap-3">
-          <Link to="/login" tabIndex={-1}>
-            <Button variant="secondary" size="sm" leftIcon={<LogIn size={15} />}>
-              Login
-            </Button>
-          </Link>
+          {isAuthenticated && user ? (
+            <div className="flex items-center gap-3">
+              <Link
+                to="/profile"
+                className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/80 px-3 py-1.5 text-xs text-slate-300 hover:border-slate-700 transition-colors"
+              >
+                <UserCheck size={14} className="text-emerald-400" />
+                <span className="font-semibold text-white">{user.name}</span>
+                {user.role === 'admin' && (
+                  <Badge variant="warning" className="text-[10px] px-1 py-0">
+                    Admin
+                  </Badge>
+                )}
+              </Link>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                leftIcon={<LogOut size={14} />}
+                className="text-slate-400 hover:text-rose-400"
+              >
+                Logout
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Link to="/login" tabIndex={-1}>
+                <Button variant="secondary" size="sm" leftIcon={<LogIn size={15} />}>
+                  Login
+                </Button>
+              </Link>
+              <Link to="/register" tabIndex={-1}>
+                <Button variant="primary" size="sm">
+                  Register
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Mobile Hamburger Button */}
@@ -92,12 +152,58 @@ export default function Navbar() {
                 </NavLink>
               );
             })}
-            <div className="pt-3">
-              <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="block">
-                <Button variant="primary" size="md" className="w-full justify-center" leftIcon={<LogIn size={16} />}>
-                  Login to Account
-                </Button>
-              </Link>
+
+            {user?.role === 'admin' && (
+              <NavLink
+                to="/admin"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={getMobileNavLinkClass}
+              >
+                <ShieldAlert size={18} className="text-amber-400" />
+                <span className="text-amber-300">Admin Panel</span>
+              </NavLink>
+            )}
+
+            <div className="pt-4 border-t border-slate-800">
+              {isAuthenticated && user ? (
+                <div className="space-y-2">
+                  <div className="px-3 py-2 rounded-lg bg-slate-950/60 border border-slate-800 text-xs text-slate-300">
+                    <div className="font-semibold text-white">{user.name}</div>
+                    <div className="text-[11px] text-slate-500">{user.email}</div>
+                  </div>
+                  <Link
+                    to="/profile"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block"
+                  >
+                    <Button variant="secondary" size="md" className="w-full justify-center" leftIcon={<UserIcon size={16} />}>
+                      My Profile
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="danger"
+                    size="md"
+                    onClick={handleLogout}
+                    className="w-full justify-center"
+                    leftIcon={<LogOut size={16} />}
+                  >
+                    Sign Out
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="block">
+                    <Button variant="primary" size="md" className="w-full justify-center" leftIcon={<LogIn size={16} />}>
+                      Login to Account
+                    </Button>
+                  </Link>
+                  <Link to="/register" onClick={() => setIsMobileMenuOpen(false)} className="block">
+                    <Button variant="secondary" size="md" className="w-full justify-center">
+                      Create Account
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </div>
           </nav>
         </div>

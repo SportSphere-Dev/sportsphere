@@ -1,10 +1,9 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-
+import { createBrowserRouter } from 'react-router-dom';
 import CustomerLayout from '@/layouts/CustomerLayout';
 import AdminLayout from '@/layouts/AdminLayout';
 
+// Pages
 import HomePage from '@/pages/HomePage';
-import NotFoundPage from '@/pages/NotFoundPage';
 import LoginPage from '@/pages/auth/LoginPage';
 import RegisterPage from '@/pages/auth/RegisterPage';
 import VerifyOtpPage from '@/pages/auth/VerifyOtpPage';
@@ -14,40 +13,79 @@ import PaymentPage from '@/pages/booking/PaymentPage';
 import MyBookingsPage from '@/pages/dashboard/MyBookingsPage';
 import ProfilePage from '@/pages/dashboard/ProfilePage';
 import AdminDashboardPage from '@/pages/admin/AdminDashboardPage';
+import NotFoundPage from '@/pages/NotFoundPage';
 
-const router = createBrowserRouter([
-  // Customer Routes (Shared CustomerLayout)
+// Route Guards
+import ProtectedRoute from './ProtectedRoute';
+import RoleRoute from './RoleRoute';
+
+export const router = createBrowserRouter([
   {
+    path: '/',
     element: <CustomerLayout />,
     children: [
-      { path: '/', element: <HomePage /> },
-      { path: '/login', element: <LoginPage /> },
-      { path: '/register', element: <RegisterPage /> },
-      { path: '/verify', element: <VerifyOtpPage /> },
-      { path: '/venue', element: <VenuePage /> },
-      { path: '/booking', element: <BookingPage /> },
-      { path: '/payment', element: <PaymentPage /> },
-      { path: '/my-bookings', element: <MyBookingsPage /> },
-      { path: '/profile', element: <ProfilePage /> },
+      {
+        index: true,
+        element: <HomePage />,
+      },
+      {
+        path: 'login',
+        element: <LoginPage />,
+      },
+      {
+        path: 'register',
+        element: <RegisterPage />,
+      },
+      {
+        path: 'verify',
+        element: <VerifyOtpPage />,
+      },
+      {
+        path: 'venue',
+        element: <VenuePage />,
+      },
+      // Authenticated Customer Routes
+      {
+        element: <ProtectedRoute />,
+        children: [
+          {
+            path: 'booking',
+            element: <BookingPage />,
+          },
+          {
+            path: 'payment',
+            element: <PaymentPage />,
+          },
+          {
+            path: 'my-bookings',
+            element: <MyBookingsPage />,
+          },
+          {
+            path: 'profile',
+            element: <ProfilePage />,
+          },
+        ],
+      },
     ],
   },
-
-  // Admin Routes (Shared AdminLayout)
+  // Admin Route (Requires 'admin' role)
   {
     path: '/admin',
-    element: <AdminLayout />,
+    element: <RoleRoute requiredRole="admin" />,
     children: [
-      { index: true, element: <AdminDashboardPage /> },
+      {
+        element: <AdminLayout />,
+        children: [
+          {
+            index: true,
+            element: <AdminDashboardPage />,
+          },
+        ],
+      },
     ],
   },
-
-  // Catch-all 404 Route (Unwrapped / Standalone)
   {
     path: '*',
     element: <NotFoundPage />,
   },
 ]);
-
-export default function AppRoutes() {
-  return <RouterProvider router={router} />;
-}

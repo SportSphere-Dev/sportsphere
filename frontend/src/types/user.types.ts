@@ -1,11 +1,13 @@
 export type UserRole = 'customer' | 'admin';
 
 export interface User {
-  id: string;
+  id: number;
   name: string;
   email: string;
-  phone: string;
   role: UserRole;
-  emailVerified: boolean;
-  phoneVerified: boolean;
+}
+
+export interface AuthToken {
+  access_token: string;
+  token_type: string;
 }
