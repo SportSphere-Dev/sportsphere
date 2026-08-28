@@ -1,11 +1,9 @@
 function App() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <h1 className="text-4xl font-bold">
-        SportSphere
-      </h1>
+    <div className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
+      <h1 className="text-3xl font-bold tracking-tight">SportSphere</h1>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
