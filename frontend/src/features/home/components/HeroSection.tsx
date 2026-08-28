@@ -1,58 +1,107 @@
 import { Link } from 'react-router-dom';
-import { Calendar, ArrowRight, ShieldCheck, Clock, Zap } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Clock, Zap, Sparkles } from 'lucide-react';
+import { motion, useReducedMotion, type Variants } from 'motion/react';
 import { Button, Badge } from '@/components/common';
+import HeroVisual from './HeroVisual';
 
 export default function HeroSection() {
+  const shouldReduceMotion = useReducedMotion();
+
+  const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: shouldReduceMotion ? 0 : 0.12,
+        delayChildren: shouldReduceMotion ? 0 : 0.05,
+      },
+    },
+  };
+
+  const itemVariants: Variants = {
+    hidden: { opacity: 0, y: shouldReduceMotion ? 0 : 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.5,
+        ease: [0.22, 1, 0.36, 1],
+      },
+    },
+  };
+
   return (
-    <section className="relative overflow-hidden border-b border-slate-800/80 bg-slate-950 py-16 sm:py-24 lg:py-32">
-      {/* Background Ambient Glow */}
-      <div 
-        className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-[500px] w-[600px] -translate-x-1/2 rounded-full bg-emerald-500/5 blur-[120px]" 
-        aria-hidden="true" 
+    <section className="relative overflow-hidden border-b border-slate-800/80 bg-slate-950 py-16 sm:py-24 lg:py-28">
+      {/* Stadium Ambient Background Blur */}
+      <div
+        className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-[500px] w-[700px] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-[140px]"
+        aria-hidden="true"
       />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-8">
           
-          {/* Left Column: Messaging */}
-          <div className="text-center lg:col-span-7 lg:text-left">
-            <div className="inline-flex items-center gap-2">
-              <Badge variant="brand">SPORTS TURF BOOKING</Badge>
-              <span className="text-xs font-medium text-slate-400">Direct Venue Access</span>
-            </div>
+          {/* Left: Staggered Hero Copy */}
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="text-center lg:col-span-7 lg:text-left"
+          >
+            <motion.div variants={itemVariants} className="inline-flex items-center gap-2">
+              <Badge variant="brand" className="px-2.5 py-1 text-xs">
+                <Sparkles size={13} className="mr-1.5 inline" aria-hidden="true" />
+                SPORTS TURF BOOKING
+              </Badge>
+              <span className="text-xs font-semibold text-slate-400">Direct Venue Access</span>
+            </motion.div>
 
-            <h1 className="mt-6 text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
+            <motion.h1
+              variants={itemVariants}
+              className="mt-6 text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl"
+            >
               Play more. <br />
-              <span className="text-emerald-400">Book smarter.</span>
-            </h1>
+              <span className="bg-gradient-to-r from-emerald-400 via-emerald-300 to-teal-400 bg-clip-text text-transparent">
+                Book smarter.
+              </span>
+            </motion.h1>
 
-            <p className="mt-5 max-w-2xl text-base text-slate-300 sm:text-lg">
+            <motion.p
+              variants={itemVariants}
+              className="mt-5 max-w-2xl text-base text-slate-300 sm:text-lg"
+            >
               Check turf availability, choose your preferred slot, and secure your game directly without the hassle of phone calls or manual coordination.
-            </p>
+            </motion.p>
 
-            <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row lg:justify-start">
+            <motion.div
+              variants={itemVariants}
+              className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row lg:justify-start"
+            >
               <Link to="/venue" className="w-full sm:w-auto">
-                <Button 
-                  size="lg" 
-                  className="w-full sm:w-auto" 
+                <Button
+                  size="lg"
+                  className="w-full sm:w-auto shadow-lg shadow-emerald-500/20"
                   rightIcon={<ArrowRight size={18} aria-hidden="true" />}
                 >
                   Check Availability
                 </Button>
               </Link>
               <Link to="/venue" className="w-full sm:w-auto">
-                <Button 
-                  variant="secondary" 
-                  size="lg" 
+                <Button
+                  variant="secondary"
+                  size="lg"
                   className="w-full sm:w-auto"
                 >
                   View Venue Details
                 </Button>
               </Link>
-            </div>
+            </motion.div>
 
-            {/* Quick Guarantees */}
-            <div className="mt-10 grid grid-cols-3 gap-4 border-t border-slate-800/80 pt-6 text-left">
+            {/* Guarantees */}
+            <motion.div
+              variants={itemVariants}
+              className="mt-10 grid grid-cols-3 gap-4 border-t border-slate-800/80 pt-6 text-left"
+            >
               <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
                 <ShieldCheck size={16} className="shrink-0 text-emerald-400" aria-hidden="true" />
                 <span>Zero Double Booking</span>
@@ -65,61 +114,18 @@ export default function HeroSection() {
                 <Zap size={16} className="shrink-0 text-emerald-400" aria-hidden="true" />
                 <span>5-Min Checkout Hold</span>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
-          {/* Right Column: Visual Preview Treatment */}
-          <div className="lg:col-span-5">
-            <div className="relative mx-auto w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/90 p-6 shadow-2xl shadow-black/60 backdrop-blur-sm">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full bg-emerald-500" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-200">Turf Match Schedule</span>
-                </div>
-                <Badge variant="neutral">Live Preview</Badge>
-              </div>
-
-              {/* Mock Visual Slots */}
-              <div className="mt-4 space-y-3">
-                <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950/60 p-3">
-                  <div className="flex items-center gap-3">
-                    <Calendar size={18} className="text-emerald-400" aria-hidden="true" />
-                    <div>
-                      <div className="text-xs font-semibold text-white">06:00 PM - 07:00 PM</div>
-                      <div className="text-[10px] text-slate-400">Prime Evening Slot</div>
-                    </div>
-                  </div>
-                  <Badge variant="success">Available</Badge>
-                </div>
-
-                <div className="flex items-center justify-between rounded-lg border border-slate-800/60 bg-slate-950/30 p-3 opacity-60">
-                  <div className="flex items-center gap-3">
-                    <Calendar size={18} className="text-slate-500" aria-hidden="true" />
-                    <div>
-                      <div className="text-xs font-semibold text-slate-300">07:00 PM - 08:00 PM</div>
-                      <div className="text-[10px] text-slate-500">Reserved</div>
-                    </div>
-                  </div>
-                  <Badge variant="neutral">Booked</Badge>
-                </div>
-
-                <div className="flex items-center justify-between rounded-lg border border-emerald-500/30 bg-emerald-950/20 p-3">
-                  <div className="flex items-center gap-3">
-                    <Calendar size={18} className="text-emerald-400" aria-hidden="true" />
-                    <div>
-                      <div className="text-xs font-semibold text-emerald-300">08:00 PM - 09:00 PM</div>
-                      <div className="text-[10px] text-emerald-400/80">Selected by you</div>
-                    </div>
-                  </div>
-                  <Badge variant="brand">Selected</Badge>
-                </div>
-              </div>
-
-              <div className="mt-5 rounded-lg border border-slate-800/80 bg-slate-950/80 p-3 text-center text-xs text-slate-400">
-                Online booking window opens 5 days in advance.
-              </div>
-            </div>
-          </div>
+          {/* Right: 3D Interactive Hero Visual */}
+          <motion.div
+            initial={shouldReduceMotion ? {} : { opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            className="lg:col-span-5"
+          >
+            <HeroVisual />
+          </motion.div>
 
         </div>
       </div>
