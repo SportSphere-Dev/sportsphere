@@ -3,13 +3,14 @@ import {
   VenueInformation,
   BookingInformation,
 } from '@/features/booking';
+import { PageTransition } from '@/components/motion';
 
 export default function VenuePage() {
   return (
-    <div className="flex flex-col">
+    <PageTransition className="flex flex-col">
       <VenueHero />
       <VenueInformation />
       <BookingInformation />
-    </div>
+    </PageTransition>
   );
 }

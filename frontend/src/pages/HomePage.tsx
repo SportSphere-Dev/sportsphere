@@ -5,15 +5,16 @@ import {
   BookingRulesPreview,
   FinalCta,
 } from '@/features/home';
+import { PageTransition } from '@/components/motion';
 
 export default function HomePage() {
   return (
-    <div className="flex flex-col">
+    <PageTransition className="flex flex-col">
       <HeroSection />
       <HowItWorks />
       <BenefitsSection />
       <BookingRulesPreview />
       <FinalCta />
-    </div>
+    </PageTransition>
   );
 }
