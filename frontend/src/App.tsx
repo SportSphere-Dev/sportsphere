@@ -1,9 +1,7 @@
+import { AppRoutes } from '@/routes';
+
 function App() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
-      <h1 className="text-3xl font-bold tracking-tight">SportSphere</h1>
-    </div>
-  );
+  return <AppRoutes />;
 }
 
 export default App;
