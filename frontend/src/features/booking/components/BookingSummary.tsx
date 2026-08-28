@@ -2,11 +2,11 @@ import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ArrowRight, Calendar, Clock, Users, ShieldCheck, Timer } from 'lucide-react';
 import { Card, Button, Badge } from '@/components/common';
-import type { DisplaySlot } from './SlotGrid';
+import type { Slot } from '@/types';
 
 export interface BookingSummaryProps {
   selectedDate: Date;
-  selectedSlot: DisplaySlot | null;
+  selectedSlot: Slot | null;
   durationMinutes: number;
   playerCount: number;
   selectedAddOnsCount: number;

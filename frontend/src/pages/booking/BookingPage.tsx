@@ -1,4 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { format } from 'date-fns';
+import axios from 'axios';
+import { Sparkles, AlertCircle, RotateCcw, CalendarX } from 'lucide-react';
 import { PageTransition, FadeIn } from '@/components/motion';
 import {
   DateSelector,
@@ -7,40 +10,71 @@ import {
   PlayerCountSelector,
   AddOnsSelector,
   BookingSummary,
-  type DisplaySlot,
+  getSlots,
 } from '@/features/booking';
-import { Badge } from '@/components/common';
-import { Sparkles } from 'lucide-react';
+import { Badge, Button } from '@/components/common';
+import { LoadingSpinner, EmptyState } from '@/components/feedback';
+import type { Slot } from '@/types';
 
-const DEMO_SLOTS: DisplaySlot[] = [
-  // Morning
-  { id: 'slot-1', time: '07:00 AM', period: 'Morning', status: 'available' },
-  { id: 'slot-2', time: '08:00 AM', period: 'Morning', status: 'available' },
-  { id: 'slot-3', time: '09:00 AM', period: 'Morning', status: 'booked' },
-  { id: 'slot-4', time: '10:00 AM', period: 'Morning', status: 'available' },
-  // Afternoon
-  { id: 'slot-5', time: '01:00 PM', period: 'Afternoon', status: 'available' },
-  { id: 'slot-6', time: '02:00 PM', period: 'Afternoon', status: 'blocked' },
-  { id: 'slot-7', time: '03:00 PM', period: 'Afternoon', status: 'available' },
-  { id: 'slot-8', time: '04:00 PM', period: 'Afternoon', status: 'available' },
-  // Evening / Peak
-  { id: 'slot-9', time: '06:00 PM', period: 'Evening', status: 'available', isPeak: true },
-  { id: 'slot-10', time: '07:00 PM', period: 'Evening', status: 'held', isPeak: true },
-  { id: 'slot-11', time: '08:00 PM', period: 'Evening', status: 'available', isPeak: true },
-  { id: 'slot-12', time: '09:00 PM', period: 'Evening', status: 'booked', isPeak: true },
-];
+// Default sportId for the single venue facility
+const DEFAULT_SPORT_ID = 1;
 
 export default function BookingPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [selectedSlot, setSelectedSlot] = useState<DisplaySlot | null>(null);
+  const [slots, setSlots] = useState<Slot[]>([]);
+  const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [durationMinutes, setDurationMinutes] = useState<number>(60);
   const [playerCount, setPlayerCount] = useState<number>(10);
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
+
+  const [isLoadingSlots, setIsLoadingSlots] = useState<boolean>(true);
+  const [slotError, setSlotError] = useState<string | null>(null);
+
+  const fetchSlots = useCallback(async (date: Date, signal?: AbortSignal) => {
+    setIsLoadingSlots(true);
+    setSlotError(null);
+
+    const formattedDate = format(date, 'yyyy-MM-dd');
+
+    try {
+      const fetchedSlots = await getSlots({
+        sportId: DEFAULT_SPORT_ID,
+        date: formattedDate,
+        signal,
+      });
+
+      setSlots(fetchedSlots);
+      setSelectedSlot(null); // Reset selection when slot dataset updates
+    } catch (err: unknown) {
+      if (axios.isCancel(err)) {
+        // Request was cancelled due to date change; ignore
+        return;
+      }
+      setSlots([]);
+      setSelectedSlot(null);
+      setSlotError('Unable to load available slots. Please check your connection and try again.');
+    } finally {
+      setIsLoadingSlots(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchSlots(selectedDate, controller.signal);
+
+    return () => {
+      controller.abort();
+    };
+  }, [selectedDate, fetchSlots]);
 
   const handleToggleAddOn = (id: string) => {
     setSelectedAddOns((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
+  };
+
+  const handleRetry = () => {
+    fetchSlots(selectedDate);
   };
 
   return (
@@ -76,17 +110,43 @@ export default function BookingPage() {
                 selectedDate={selectedDate}
                 onSelectDate={(date) => {
                   setSelectedDate(date);
-                  setSelectedSlot(null); // Reset slot selection on date change
                 }}
               />
             </FadeIn>
 
+            {/* Real Slot Availability Grid / Loading / Error / Empty States */}
             <FadeIn direction="up" delay={0.1}>
-              <SlotGrid
-                slots={DEMO_SLOTS}
-                selectedSlotId={selectedSlot?.id || null}
-                onSelectSlot={(slot) => setSelectedSlot(slot)}
-              />
+              {isLoadingSlots ? (
+                <div className="flex min-h-[220px] flex-col items-center justify-center rounded-2xl border border-slate-800/80 bg-slate-900/40 p-8">
+                  <LoadingSpinner size="md" label="Loading available slots..." />
+                </div>
+              ) : slotError ? (
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-rose-500/20 bg-rose-950/20 p-8 text-center">
+                  <AlertCircle size={32} className="text-rose-400 mb-2" />
+                  <p className="text-sm font-semibold text-white">{slotError}</p>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleRetry}
+                    className="mt-4"
+                    leftIcon={<RotateCcw size={14} />}
+                  >
+                    Retry
+                  </Button>
+                </div>
+              ) : slots.length === 0 ? (
+                <EmptyState
+                  title="No slots available for this date"
+                  description="All slots are either fully booked or unavailable. Please select another date from the calendar."
+                  icon={<CalendarX size={24} className="text-slate-400" />}
+                />
+              ) : (
+                <SlotGrid
+                  slots={slots}
+                  selectedSlotId={selectedSlot?.id || null}
+                  onSelectSlot={(slot) => setSelectedSlot(slot)}
+                />
+              )}
             </FadeIn>
 
             <FadeIn direction="up" delay={0.15}>

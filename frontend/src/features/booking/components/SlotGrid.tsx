@@ -1,25 +1,17 @@
 import { Clock, ShieldAlert, CheckCircle2, Lock } from 'lucide-react';
 import { Card, Badge } from '@/components/common';
-import type { SlotStatus } from '@/types';
-
-export interface DisplaySlot {
-  id: string;
-  time: string;
-  period: 'Morning' | 'Afternoon' | 'Evening';
-  status: SlotStatus;
-  isPeak?: boolean;
-}
+import type { Slot, SlotStatus } from '@/types';
 
 export interface SlotGridProps {
-  slots: DisplaySlot[];
+  slots: Slot[];
   selectedSlotId: string | null;
-  onSelectSlot: (slot: DisplaySlot) => void;
+  onSelectSlot: (slot: Slot) => void;
 }
 
 export default function SlotGrid({ slots, selectedSlotId, onSelectSlot }: SlotGridProps) {
   const periods: ('Morning' | 'Afternoon' | 'Evening')[] = ['Morning', 'Afternoon', 'Evening'];
 
-  const getStatusBadge = (slot: DisplaySlot) => {
+  const getStatusBadge = (slot: Slot) => {
     switch (slot.status) {
       case 'available':
         return slot.isPeak ? (

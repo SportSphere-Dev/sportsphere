@@ -9,8 +9,9 @@ export { default as VenueFinalCta } from './components/VenueFinalCta';
 
 export { default as DateSelector } from './components/DateSelector';
 export { default as SlotGrid } from './components/SlotGrid';
-export type { DisplaySlot } from './components/SlotGrid';
 export { default as DurationSelector } from './components/DurationSelector';
 export { default as PlayerCountSelector } from './components/PlayerCountSelector';
 export { default as AddOnsSelector } from './components/AddOnsSelector';
 export { default as BookingSummary } from './components/BookingSummary';
+
+export * from './api';

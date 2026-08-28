@@ -1,11 +1,24 @@
 export type SlotStatus = 'available' | 'held' | 'booked' | 'blocked';
 
+export interface BackendSlotResponse {
+  id: number;
+  sport_id: number;
+  start_time: string; // "YYYY-MM-DDTHH:mm:ss" or "HH:mm:ss" / "HH:mm"
+  end_time: string;
+  status: SlotStatus;
+  price?: number;
+}
+
 export interface Slot {
   id: string;
-  startTime: string; // ISO 8601 string or HH:mm format
+  sportId?: number;
+  time: string;
+  startTime: string;
   endTime: string;
+  period: 'Morning' | 'Afternoon' | 'Evening';
   status: SlotStatus;
-  price: number;
+  price?: number;
+  isPeak?: boolean;
 }
 
 export interface AddOn {
@@ -25,8 +38,8 @@ export interface Booking {
   date: string; // YYYY-MM-DD
   startTime: string;
   endTime: string;
-  durationHours: number; // Max 5 hours per business rules
-  playerCount: number; // Base max is 15; extras charged at centre
+  durationHours: number; // Max 5 hours
+  playerCount: number; // Standard 15
   addOns: AddOn[];
   subtotal: number;
   totalAmount: number;
