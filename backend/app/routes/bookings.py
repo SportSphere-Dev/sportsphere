@@ -6,6 +6,7 @@ from app.models.booking import Booking
 from app.models.turf_slot import TurfSlot
 from app.models.user import User
 from app.schemas.booking import BookingCreate, BookingResponse
+from app.dependencies import get_current_user
 
 router = APIRouter(
     prefix="/bookings",
@@ -26,19 +27,10 @@ def get_bookings(db: Session = Depends(get_db)):
 def create_booking(
     booking_data: BookingCreate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     # 1. Check user
-    user = (
-        db.query(User)
-        .filter(User.id == booking_data.user_id)
-        .first()
-    )
-
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
+    
 
     # 2. Check slot
     slot = (
@@ -65,7 +57,7 @@ def create_booking(
 
     # 5. Create booking
     booking = Booking(
-        user_id=booking_data.user_id,
+        user_id=current_user.id,
         slot_id=booking_data.slot_id,
         number_of_players=booking_data.number_of_players,
         status="confirmed",
@@ -107,6 +99,7 @@ def cancel_booking(
     slot = (
         db.query(TurfSlot)
         .filter(TurfSlot.id == booking.slot_id)
+        .with_for_update()
         .first()
     )
 

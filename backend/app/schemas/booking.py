@@ -4,7 +4,6 @@ from pydantic import BaseModel, Field
 
 
 class BookingCreate(BaseModel):
-    user_id: int
     slot_id: int
     number_of_players: int = Field(gt=0, le=20)
 
