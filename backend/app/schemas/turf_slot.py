@@ -8,8 +8,13 @@ class TurfSlotCreate(BaseModel):
     slot_date: date
     start_time: time
     end_time: time
-    price: int
 
+class TurfSlotUpdate(BaseModel):
+    slot_date: date | None = None
+    start_time: time | None = None
+    end_time: time | None = None
+    price: int | None = None
+    is_available: bool | None = None
 
 class TurfSlotResponse(BaseModel):
     id: int

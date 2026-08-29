@@ -1,9 +1,14 @@
 from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.connection import Base
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.booking_add_on import BookingAddOn
 
 class Booking(Base):
     __tablename__ = "bookings"
@@ -42,8 +47,25 @@ class Booking(Base):
         nullable=False,
     )
 
+    refund_amount: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        nullable=False,
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=datetime.utcnow,
         nullable=False,
+    )
+
+    hold_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True,
+    )
+
+    add_ons: Mapped[list["BookingAddOn"]] = relationship(
+        "BookingAddOn",
+        back_populates="booking",
+        cascade="all, delete-orphan",
     )

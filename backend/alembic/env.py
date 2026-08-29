@@ -36,6 +36,10 @@ from app.models.user import User
 from app.models.sport import Sport
 from app.models.turf_slot import TurfSlot
 from app.models.booking import Booking
+from app.models.payment import Payment
+from app.models.payment import Payment
+from app.models.add_on import AddOn
+from app.models.booking_add_on import BookingAddOn
 
 target_metadata = Base.metadata
 # other values from the config, defined by the needs of env.py,

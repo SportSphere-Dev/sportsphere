@@ -28,3 +28,6 @@ Thumbs.db
 # Frontend
 node_modules/
 dist/
+
+# Celery
+celerybeat-schedule

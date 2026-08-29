@@ -1,23 +1,24 @@
 from pydantic import BaseModel
 
 
-class SportCreate(BaseModel):
+class AddOnCreate(BaseModel):
     name: str
     description: str | None = None
-    price_per_hour: int
+    price: int
 
-class SportUpdate(BaseModel):
+
+class AddOnUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
-    price_per_hour: int | None = None
+    price: int | None = None
     is_active: bool | None = None
 
 
-class SportResponse(BaseModel):
+class AddOnResponse(BaseModel):
     id: int
     name: str
     description: str | None
-    price_per_hour: int
+    price: int
     is_active: bool
 
     model_config = {"from_attributes": True}
