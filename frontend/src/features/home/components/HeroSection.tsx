@@ -3,6 +3,7 @@ import { ArrowRight, ShieldCheck, Clock, Zap, Sparkles } from 'lucide-react';
 import { motion, useReducedMotion, type Variants } from 'motion/react';
 import { Button, Badge } from '@/components/common';
 import HeroVisual from './HeroVisual';
+import heroBgImg from '@/assets/venue/1.jpg';
 
 export default function HeroSection() {
   const shouldReduceMotion = useReducedMotion();
@@ -19,22 +20,34 @@ export default function HeroSection() {
   };
 
   const itemVariants: Variants = {
-    hidden: { opacity: 0, y: shouldReduceMotion ? 0 : 20 },
+    hidden: { opacity: 0, y: shouldReduceMotion ? 0 : 25, filter: shouldReduceMotion ? 'none' : 'blur(4px)' },
     visible: {
       opacity: 1,
       y: 0,
+      filter: 'blur(0px)',
       transition: {
-        duration: 0.5,
-        ease: [0.22, 1, 0.36, 1],
+        duration: 0.6,
+        ease: [0.16, 1, 0.3, 1], // cinematic cubic-bezier
       },
     },
   };
 
   return (
     <section className="relative overflow-hidden border-b border-slate-800/80 bg-slate-950 py-16 sm:py-24 lg:py-28">
-      {/* Stadium Ambient Background Blur */}
+      {/* Deep Stadium Atmospheric Background */}
+      <div className="pointer-events-none absolute inset-0 -z-20 overflow-hidden opacity-20">
+        <img
+          src={heroBgImg}
+          alt=""
+          aria-hidden="true"
+          className="h-full w-full object-cover object-center blur-lg scale-110"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-950/80 to-slate-950" />
+      </div>
+
+      {/* Volumetric Radial Aura */}
       <div
-        className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-[500px] w-[700px] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-[140px]"
+        className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-[550px] w-[750px] -translate-x-1/2 rounded-full bg-emerald-500/15 blur-[140px]"
         aria-hidden="true"
       />
 
@@ -49,28 +62,30 @@ export default function HeroSection() {
             className="text-center lg:col-span-7 lg:text-left"
           >
             <motion.div variants={itemVariants} className="inline-flex items-center gap-2">
-              <Badge variant="brand" className="px-2.5 py-1 text-xs">
+              <Badge variant="brand" className="px-3 py-1 text-xs shadow-md shadow-emerald-950/50">
                 <Sparkles size={13} className="mr-1.5 inline" aria-hidden="true" />
                 SPORTS TURF BOOKING
               </Badge>
-              <span className="text-xs font-semibold text-slate-400">Direct Venue Access</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Direct Venue Access
+              </span>
             </motion.div>
 
             <motion.h1
               variants={itemVariants}
-              className="mt-6 text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl"
+              className="mt-6 text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl uppercase"
             >
               Play more. <br />
-              <span className="bg-gradient-to-r from-emerald-400 via-emerald-300 to-teal-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-200 bg-clip-text text-transparent drop-shadow-[0_10px_20px_rgba(16,185,129,0.2)]">
                 Book smarter.
               </span>
             </motion.h1>
 
             <motion.p
               variants={itemVariants}
-              className="mt-5 max-w-2xl text-base text-slate-300 sm:text-lg"
+              className="mt-5 max-w-2xl text-base text-slate-300 sm:text-lg leading-relaxed"
             >
-              Check turf availability, choose your preferred slot, and secure your game directly without the hassle of phone calls or manual coordination.
+              Check turf availability, choose your preferred slot, and secure your game directly without the back-and-forth of phone calls or manual coordination.
             </motion.p>
 
             <motion.div
@@ -80,7 +95,7 @@ export default function HeroSection() {
               <Link to="/venue" className="w-full sm:w-auto">
                 <Button
                   size="lg"
-                  className="w-full sm:w-auto shadow-lg shadow-emerald-500/20"
+                  className="w-full sm:w-auto shadow-xl shadow-emerald-500/25 transition-transform hover:scale-[1.02]"
                   rightIcon={<ArrowRight size={18} aria-hidden="true" />}
                 >
                   Check Availability
@@ -90,21 +105,21 @@ export default function HeroSection() {
                 <Button
                   variant="secondary"
                   size="lg"
-                  className="w-full sm:w-auto"
+                  className="w-full sm:w-auto border-slate-700 bg-slate-900/80 hover:bg-slate-800"
                 >
                   View Venue Details
                 </Button>
               </Link>
             </motion.div>
 
-            {/* Guarantees */}
+            {/* Quick Guarantees */}
             <motion.div
               variants={itemVariants}
               className="mt-10 grid grid-cols-3 gap-4 border-t border-slate-800/80 pt-6 text-left"
             >
               <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
                 <ShieldCheck size={16} className="shrink-0 text-emerald-400" aria-hidden="true" />
-                <span>Zero Double Booking</span>
+                <span>Zero Double-Booking</span>
               </div>
               <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
                 <Clock size={16} className="shrink-0 text-emerald-400" aria-hidden="true" />
@@ -119,9 +134,9 @@ export default function HeroSection() {
 
           {/* Right: 3D Interactive Hero Visual */}
           <motion.div
-            initial={shouldReduceMotion ? {} : { opacity: 0, scale: 0.95 }}
+            initial={shouldReduceMotion ? {} : { opacity: 0, scale: 0.94 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className="lg:col-span-5"
           >
             <HeroVisual />

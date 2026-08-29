@@ -1,5 +1,16 @@
 import apiClient from '@/api/client';
-import type { BackendSlotResponse, Slot } from '@/types';
+import type {
+  BackendSlotResponse,
+  Slot,
+  CreateBookingRequest,
+  BackendBookingResponse,
+  CreatePaymentRequest,
+  VerifyPaymentRequest,
+  BackendPaymentResponse,
+  TurfSlotResponse,
+  AdminBookingResponse,
+  CreateSlotRequest,
+} from '@/types';
 
 export interface GetSlotsParams {
   sportId: number;
@@ -7,9 +18,6 @@ export interface GetSlotsParams {
   signal?: AbortSignal;
 }
 
-/**
- * Parses time strings (ISO format or HH:mm:ss / HH:mm) into a clean 12-hour display format.
- */
 function formatDisplayTime(timeStr: string): string {
   if (!timeStr) return '';
 
@@ -29,9 +37,6 @@ function formatDisplayTime(timeStr: string): string {
   return `${displayH.toString().padStart(2, '0')}:${minutes} ${period}`;
 }
 
-/**
- * Determines whether a slot falls into Morning, Afternoon, or Evening/Peak.
- */
 function getSlotPeriod(timeStr: string): 'Morning' | 'Afternoon' | 'Evening' {
   let hour = 0;
   if (timeStr.includes('T')) {
@@ -46,9 +51,6 @@ function getSlotPeriod(timeStr: string): 'Morning' | 'Afternoon' | 'Evening' {
   return 'Evening';
 }
 
-/**
- * Normalizes backend slot entity into frontend Slot interface.
- */
 export function mapBackendSlot(backendSlot: BackendSlotResponse): Slot {
   const period = getSlotPeriod(backendSlot.start_time);
   const displayTime = formatDisplayTime(backendSlot.start_time);
@@ -69,9 +71,6 @@ export function mapBackendSlot(backendSlot: BackendSlotResponse): Slot {
   };
 }
 
-/**
- * Fetches slot records from GET /slots/
- */
 export async function getSlots({ sportId, date, signal }: GetSlotsParams): Promise<Slot[]> {
   const response = await apiClient.get<BackendSlotResponse[]>('/slots/', {
     params: {
@@ -86,4 +85,68 @@ export async function getSlots({ sportId, date, signal }: GetSlotsParams): Promi
   }
 
   return response.data.map(mapBackendSlot);
+}
+
+/**
+ * Creates a slot reservation hold via POST /bookings/
+ */
+export async function createBooking(payload: CreateBookingRequest): Promise<BackendBookingResponse> {
+  const response = await apiClient.post<BackendBookingResponse>('/bookings/', payload);
+  return response.data;
+}
+
+/**
+ * Initiates a payment session via POST /payments/
+ */
+export async function createPayment(payload: CreatePaymentRequest): Promise<BackendPaymentResponse> {
+  const response = await apiClient.post<BackendPaymentResponse>('/payments/', payload);
+  return response.data;
+}
+
+/**
+ * Verifies/simulates payment completion via POST /payments/verify
+ */
+export async function verifyPayment(payload: VerifyPaymentRequest): Promise<BackendPaymentResponse> {
+  const response = await apiClient.post<BackendPaymentResponse>('/payments/verify', payload);
+  return response.data;
+}
+
+/**
+ * Fetches all bookings belonging to the authenticated customer via GET /bookings/my
+ */
+export async function getMyBookings(): Promise<BackendBookingResponse[]> {
+  const response = await apiClient.get<BackendBookingResponse[]>('/bookings/my');
+  return Array.isArray(response.data) ? response.data : [];
+}
+
+/**
+ * Fetches a single booking by ID via GET /bookings/{booking_id}
+ */
+export async function getBookingById(bookingId: number): Promise<BackendBookingResponse> {
+  const response = await apiClient.get<BackendBookingResponse>(`/bookings/${bookingId}`);
+  return response.data;
+}
+
+/**
+ * Admin: Fetches all turf slots via GET /slots/
+ */
+export async function getAllSlots(): Promise<TurfSlotResponse[]> {
+  const response = await apiClient.get<TurfSlotResponse[]>('/slots/');
+  return Array.isArray(response.data) ? response.data : [];
+}
+
+/**
+ * Admin: Fetches all system bookings via GET /bookings/admin
+ */
+export async function getAdminBookings(): Promise<AdminBookingResponse[]> {
+  const response = await apiClient.get<AdminBookingResponse[]>('/bookings/admin');
+  return Array.isArray(response.data) ? response.data : [];
+}
+
+/**
+ * Admin: Creates a new turf slot via POST /slots/
+ */
+export async function createSlot(payload: CreateSlotRequest): Promise<TurfSlotResponse> {
+  const response = await apiClient.post<TurfSlotResponse>('/slots/', payload);
+  return response.data;
 }

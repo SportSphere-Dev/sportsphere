@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import axios from 'axios';
 import { Sparkles, AlertCircle, RotateCcw, CalendarX } from 'lucide-react';
@@ -11,15 +12,17 @@ import {
   AddOnsSelector,
   BookingSummary,
   getSlots,
+  createBooking,
 } from '@/features/booking';
 import { Badge, Button } from '@/components/common';
 import { LoadingSpinner, EmptyState } from '@/components/feedback';
 import type { Slot } from '@/types';
 
-// Default sportId for the single venue facility
 const DEFAULT_SPORT_ID = 1;
 
 export default function BookingPage() {
+  const navigate = useNavigate();
+
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [slots, setSlots] = useState<Slot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
@@ -30,9 +33,13 @@ export default function BookingPage() {
   const [isLoadingSlots, setIsLoadingSlots] = useState<boolean>(true);
   const [slotError, setSlotError] = useState<string | null>(null);
 
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
   const fetchSlots = useCallback(async (date: Date, signal?: AbortSignal) => {
     setIsLoadingSlots(true);
     setSlotError(null);
+    setSubmitError(null);
 
     const formattedDate = format(date, 'yyyy-MM-dd');
 
@@ -44,10 +51,9 @@ export default function BookingPage() {
       });
 
       setSlots(fetchedSlots);
-      setSelectedSlot(null); // Reset selection when slot dataset updates
+      setSelectedSlot(null);
     } catch (err: unknown) {
       if (axios.isCancel(err)) {
-        // Request was cancelled due to date change; ignore
         return;
       }
       setSlots([]);
@@ -77,6 +83,57 @@ export default function BookingPage() {
     fetchSlots(selectedDate);
   };
 
+  const handleBookingSubmit = async () => {
+    if (!selectedSlot || isSubmitting) return;
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      const slotIdNum = parseInt(selectedSlot.id, 10);
+      const bookingResponse = await createBooking({
+        slot_id: slotIdNum,
+        number_of_players: playerCount,
+      });
+
+      // Navigate to payment passing the held booking record & contextual display details
+      navigate('/payment', {
+        state: {
+          booking: bookingResponse,
+          slot: selectedSlot,
+          date: format(selectedDate, 'yyyy-MM-dd'),
+        },
+      });
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        const status = err.response?.status;
+        const detail = err.response?.data?.detail;
+
+        if (status === 400) {
+          setSubmitError(typeof detail === 'string' ? detail : 'This time slot has already passed.');
+        } else if (status === 401) {
+          setSubmitError('Authentication required. Please sign in to book a slot.');
+        } else if (status === 404) {
+          setSubmitError('The selected slot was not found.');
+        } else if (status === 409) {
+          setSubmitError('This slot is already booked or held by another player. Please pick another slot.');
+          // Refresh slot grid to reflect updated availability
+          fetchSlots(selectedDate);
+        } else if (status === 422) {
+          setSubmitError('Invalid booking parameters. Number of players must be between 1 and 20.');
+        } else if (!err.response) {
+          setSubmitError('Unable to connect to the server. Please check your internet connection.');
+        } else {
+          setSubmitError('An error occurred while reserving your slot. Please try again.');
+        }
+      } else {
+        setSubmitError('An unexpected error occurred. Please try again.');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <PageTransition className="min-h-screen bg-slate-950 py-8 sm:py-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -89,13 +146,15 @@ export default function BookingPage() {
                 <Sparkles size={13} className="mr-1 inline" />
                 TURF SCHEDULING
               </Badge>
-              <span className="text-xs text-slate-400">Live Availability Selection</span>
+              <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
+                Live Availability Selection
+              </span>
             </div>
-            <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-white sm:text-3xl lg:text-4xl">
+            <h1 className="mt-3 text-2xl font-black tracking-tight text-white sm:text-3xl lg:text-4xl uppercase">
               Reserve Your Match Slot
             </h1>
             <p className="mt-1 text-xs text-slate-400 sm:text-sm">
-              Select date, start time, match duration, and add-on gear for your game.
+              Select date, start time, match duration, and player capacity for your game.
             </p>
           </div>
         </FadeIn>
@@ -181,6 +240,9 @@ export default function BookingPage() {
                 durationMinutes={durationMinutes}
                 playerCount={playerCount}
                 selectedAddOnsCount={selectedAddOns.length}
+                isLoading={isSubmitting}
+                errorMessage={submitError}
+                onSubmit={handleBookingSubmit}
               />
             </FadeIn>
           </div>

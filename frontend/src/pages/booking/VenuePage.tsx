@@ -1,7 +1,9 @@
 import {
   VenueHero,
+  VenueGallery,
   VenueDiagram,
   VenueFacilityShowcase,
+  VenueImmersiveSection,
   BookingExperiencePreview,
   BookingInformation,
   VenueFinalCta,
@@ -12,8 +14,10 @@ export default function VenuePage() {
   return (
     <PageTransition className="flex flex-col">
       <VenueHero />
+      <VenueGallery />
       <VenueDiagram />
       <VenueFacilityShowcase />
+      <VenueImmersiveSection />
       <BookingExperiencePreview />
       <BookingInformation />
       <VenueFinalCta />

@@ -1,7 +1,8 @@
 import React, { useRef } from 'react';
 import { motion, useMotionValue, useSpring, useTransform, useReducedMotion } from 'motion/react';
-import { Shield, Sparkles, Users, Award } from 'lucide-react';
+import { Shield, Users, Award, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/common';
+import venueTurfImg from '@/assets/venue/7.jpeg';
 
 export default function VenueHeroVisual() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -10,9 +11,9 @@ export default function VenueHeroVisual() {
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
-  const springConfig = { damping: 25, stiffness: 120, mass: 0.5 };
-  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [10, -10]), springConfig);
-  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-10, 10]), springConfig);
+  const springConfig = { damping: 20, stiffness: 100, mass: 0.6 };
+  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [12, -12]), springConfig);
+  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-12, 12]), springConfig);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (shouldReduceMotion || !containerRef.current) return;
@@ -33,11 +34,11 @@ export default function VenueHeroVisual() {
       ref={containerRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="relative mx-auto flex w-full max-w-lg items-center justify-center p-2 [perspective:1200px]"
+      className="relative mx-auto flex w-full max-w-lg items-center justify-center p-2 [perspective:1400px]"
     >
       {/* Stadium Ambient Floodlight */}
       <div
-        className="pointer-events-none absolute -top-10 left-1/2 -z-10 h-72 w-72 -translate-x-1/2 rounded-full bg-emerald-500/15 blur-[90px]"
+        className="pointer-events-none absolute -top-10 left-1/2 -z-10 h-80 w-80 -translate-x-1/2 rounded-full bg-emerald-500/15 blur-[100px]"
         aria-hidden="true"
       />
 
@@ -47,10 +48,13 @@ export default function VenueHeroVisual() {
           rotateY: shouldReduceMotion ? 0 : rotateY,
           transformStyle: 'preserve-3d',
         }}
-        className="relative w-full rounded-3xl border border-slate-700/60 bg-gradient-to-b from-slate-900/90 via-slate-950/90 to-slate-900/90 p-6 shadow-2xl shadow-black/80 backdrop-blur-md"
+        className="relative w-full rounded-3xl border border-slate-700/60 bg-gradient-to-b from-slate-900/95 via-slate-950/90 to-slate-900/95 p-5 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] backdrop-blur-xl transition-shadow duration-300 hover:border-emerald-500/40"
       >
-        {/* Arena Header Bar */}
-        <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
+        {/* Header */}
+        <div
+          style={{ transform: 'translateZ(25px)' }}
+          className="flex items-center justify-between border-b border-slate-800/80 pb-3.5"
+        >
           <div className="flex items-center gap-2.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400">
               <Award size={16} aria-hidden="true" />
@@ -59,74 +63,62 @@ export default function VenueHeroVisual() {
               <span className="text-xs font-bold uppercase tracking-widest text-slate-200">
                 Single Venue Facility
               </span>
-              <div className="text-[10px] text-slate-500">Official Match Turf</div>
+              <div className="text-[10px] text-slate-500 font-mono">OFFICIAL MATCH TURF</div>
             </div>
           </div>
-          <Badge variant="success" className="text-[10px] tracking-wide uppercase">
+          <Badge variant="success" className="text-[10px] tracking-wide uppercase px-2 py-0.5">
             Open for Booking
           </Badge>
         </div>
 
-        {/* 3D Turf Plane */}
-        <div className="relative mt-5 aspect-[16/10] w-full overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-b from-emerald-950/60 via-slate-950 to-slate-950 p-4 shadow-inner">
-          {/* Field Markings */}
-          <div className="absolute inset-2.5 rounded-xl border border-emerald-400/20" />
-          <div className="absolute top-1/2 left-2.5 right-2.5 h-px -translate-y-1/2 bg-emerald-400/20" />
-          <div className="absolute top-1/2 left-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-400/20" />
-          <div className="absolute top-1/2 left-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-400/40" />
+        {/* Photographic Turf Plane */}
+        <div
+          style={{ transform: 'translateZ(10px)' }}
+          className="relative mt-4 aspect-[16/10] w-full overflow-hidden rounded-2xl border border-emerald-500/30 bg-slate-950 shadow-inner group"
+        >
+          <img
+            src={venueTurfImg}
+            alt="Full-sized sports arena turf with natural backdrop"
+            className="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/30 to-transparent" />
 
-          {/* Goal Areas */}
-          <div className="absolute top-2.5 left-1/2 h-7 w-24 -translate-x-1/2 rounded-b-md border-x border-b border-emerald-400/20" />
-          <div className="absolute bottom-2.5 left-1/2 h-7 w-24 -translate-x-1/2 rounded-t-md border-x border-t border-emerald-400/20" />
-
-          {/* Floating Feature Card: Capacity */}
+          {/* Floating Card: Capacity (Spatial Depth +45px) */}
           <motion.div
+            style={{ transform: 'translateZ(45px)' }}
             initial={shouldReduceMotion ? {} : { opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.5 }}
-            className="absolute top-4 left-4 right-4 flex items-center justify-between rounded-xl border border-slate-700/80 bg-slate-900/90 p-3 shadow-lg backdrop-blur-md"
+            className="absolute top-3 left-3 right-3 flex items-center justify-between rounded-xl border border-slate-700/80 bg-slate-900/90 p-2.5 shadow-2xl backdrop-blur-md"
           >
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
               <div className="rounded-lg bg-emerald-500/10 p-1.5 text-emerald-400">
-                <Users size={16} aria-hidden="true" />
+                <Users size={15} aria-hidden="true" />
               </div>
               <div>
                 <div className="text-xs font-semibold text-white">Full-Sized Synthetic Turf</div>
                 <div className="text-[10px] text-slate-400">Standard match capacity: Up to 15 players</div>
               </div>
             </div>
-            <Badge variant="brand" className="text-[10px]">
-              Ready
+            <Badge variant="brand" className="text-[10px] px-2">
+              Verified
             </Badge>
-          </motion.div>
-
-          {/* Floating Feature Card: Match Ready */}
-          <motion.div
-            initial={shouldReduceMotion ? {} : { opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.5 }}
-            className="absolute bottom-4 left-4 right-4 flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/90 p-3 shadow-lg backdrop-blur-md"
-          >
-            <div className="flex items-center gap-2.5">
-              <div className="rounded-lg bg-slate-800 p-1.5 text-emerald-400">
-                <Sparkles size={16} aria-hidden="true" />
-              </div>
-              <div>
-                <div className="text-xs font-semibold text-slate-200">Multi-Format Sports</div>
-                <div className="text-[10px] text-slate-500">Football, Cricket & Practice Blocks</div>
-              </div>
-            </div>
-            <span className="text-[11px] font-bold text-emerald-400">Verified Arena</span>
           </motion.div>
         </div>
 
         {/* Footer Badges */}
-        <div className="mt-4 flex items-center justify-between px-1 text-[11px] text-slate-400">
+        <div
+          style={{ transform: 'translateZ(20px)' }}
+          className="mt-3.5 flex items-center justify-between px-1 text-[11px] text-slate-400"
+        >
           <div className="flex items-center gap-1.5">
             <Shield size={13} className="text-emerald-400" />
             <span>High-Density Synthetic Turf</span>
           </div>
-          <span className="text-xs font-medium text-slate-500">Max 5-Hour Sessions</span>
+          <div className="flex items-center gap-1.5">
+            <Sparkles size={13} className="text-emerald-400" />
+            <span>Max 5-Hour Sessions</span>
+          </div>
         </div>
       </motion.div>
     </div>

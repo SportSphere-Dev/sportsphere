@@ -1,4 +1,4 @@
-import { Clock, ShieldAlert, CheckCircle2, Lock } from 'lucide-react';
+import { Clock, ShieldAlert, Lock, Flame } from 'lucide-react';
 import { Card, Badge } from '@/components/common';
 import type { Slot, SlotStatus } from '@/types';
 
@@ -15,7 +15,9 @@ export default function SlotGrid({ slots, selectedSlotId, onSelectSlot }: SlotGr
     switch (slot.status) {
       case 'available':
         return slot.isPeak ? (
-          <Badge variant="warning" className="text-[10px]">Peak</Badge>
+          <Badge variant="warning" className="text-[10px] gap-1 px-1.5">
+            <Flame size={10} className="inline text-amber-400" /> Peak
+          </Badge>
         ) : (
           <Badge variant="success" className="text-[10px]">Available</Badge>
         );
@@ -31,7 +33,12 @@ export default function SlotGrid({ slots, selectedSlotId, onSelectSlot }: SlotGr
   const getStatusIcon = (status: SlotStatus) => {
     switch (status) {
       case 'available':
-        return <CheckCircle2 size={13} className="text-emerald-400" aria-hidden="true" />;
+        return (
+          <span className="relative flex h-2.5 w-2.5 items-center justify-center">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+          </span>
+        );
       case 'held':
         return <Clock size={13} className="text-amber-400" aria-hidden="true" />;
       case 'booked':
@@ -90,19 +97,22 @@ export default function SlotGrid({ slots, selectedSlotId, onSelectSlot }: SlotGr
                         onSelectSlot(slot);
                       }
                     }}
-                    className={`flex flex-col justify-between p-3 transition-all ${
+                    className={`relative flex flex-col justify-between p-3.5 transition-all duration-150 ${
                       isSelected
-                        ? 'border-emerald-500 bg-emerald-950/40 ring-2 ring-emerald-500/40 shadow-lg shadow-emerald-950/50'
+                        ? 'border-emerald-400 bg-emerald-950/60 ring-2 ring-emerald-400/60 shadow-[0_0_20px_rgba(16,185,129,0.25)] scale-[1.02]'
                         : !isAvailable
-                        ? 'border-slate-800/40 bg-slate-900/30 opacity-50 cursor-not-allowed'
-                        : 'border-slate-800 bg-slate-900/80 hover:border-slate-700'
+                        ? 'border-slate-800/40 bg-slate-900/30 opacity-40 cursor-not-allowed'
+                        : 'border-slate-800 bg-slate-900/80 hover:border-slate-700 hover:bg-slate-900'
                     }`}
                   >
+                    {isSelected && (
+                      <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]" />
+                    )}
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-white">{slot.time}</span>
                       {getStatusIcon(slot.status)}
                     </div>
-                    <div className="mt-3 flex items-center justify-between">
+                    <div className="mt-3.5 flex items-center justify-between">
                       <span className="text-[10px] text-slate-400">{slot.period}</span>
                       {getStatusBadge(slot)}
                     </div>
