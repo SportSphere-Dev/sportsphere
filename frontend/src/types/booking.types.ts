@@ -13,10 +13,11 @@ export interface TurfSlotResponse {
 export interface BackendSlotResponse {
   id: number;
   sport_id: number;
+  slot_date: string;
   start_time: string;
   end_time: string;
-  status: SlotStatus;
-  price?: number;
+  price: number;
+  is_available: boolean;
 }
 
 export interface CreateSlotRequest {
@@ -49,9 +50,21 @@ export interface AddOn {
 
 export type BookingStatus = 'held' | 'confirmed' | 'cancelled';
 
+export interface BookingAddOnCreate {
+  add_on_id: number;
+  quantity: number;
+}
+
 export interface CreateBookingRequest {
   slot_id: number;
   number_of_players: number;
+  add_ons: BookingAddOnCreate[];
+}
+
+export interface BackendBookingAddOnResponse {
+  add_on_id: number;
+  quantity: number;
+  unit_price: number;
 }
 
 export interface BackendBookingResponse {
@@ -61,8 +74,10 @@ export interface BackendBookingResponse {
   number_of_players: number;
   status: BookingStatus;
   total_price: number;
+  refund_amount: number;
   created_at: string;
   hold_expires_at: string | null;
+  add_ons: BackendBookingAddOnResponse[];
 }
 
 export interface AdminBookingResponse {
@@ -100,7 +115,9 @@ export interface CreatePaymentRequest {
 
 export interface VerifyPaymentRequest {
   payment_id: number;
-  success: boolean;
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
 }
 
 export interface BackendPaymentResponse {
@@ -110,6 +127,8 @@ export interface BackendPaymentResponse {
   status: PaymentStatus;
   provider: string;
   provider_payment_id: string | null;
+  razorpay_key_id?: string;
+  razorpay_order_id: string;
   created_at: string;
 }
 

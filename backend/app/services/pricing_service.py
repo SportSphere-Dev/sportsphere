@@ -1,22 +1,23 @@
-from datetime import date, time
+from datetime import time
 
 
-WEEKEND_SURCHARGE = 0.20
-PEAK_HOUR_SURCHARGE = 0.30
+OPENING_TIME = time(9, 0)
+LUNCH_START = time(13, 0)
+LUNCH_END = time(14, 0)
+CLOSING_TIME = time(18, 0)
+SLOT_DURATION_MINUTES = 60
 
 
 def calculate_slot_price(
     base_hourly_price: int,
-    slot_date: date,
     start_time: time,
     end_time: time,
 ) -> int:
     """
-    Calculate the final price for a turf slot.
+    Calculate the price for a slot using the sport's
+    manually configured hourly price.
 
-    Weekend: +20%
-    Peak hours (18:00-22:00): +30%
-    Weekend + peak: both surcharges apply.
+    No weekend or peak-hour surcharge is applied.
     """
 
     start_minutes = start_time.hour * 60 + start_time.minute
@@ -27,19 +28,4 @@ def calculate_slot_price(
     if duration_minutes <= 0:
         raise ValueError("Slot end time must be after start time")
 
-    duration_hours = duration_minutes / 60
-
-    price = base_hourly_price * duration_hours
-
-    # Weekend: Saturday (5) or Sunday (6)
-    if slot_date.weekday() >= 5:
-        price *= 1 + WEEKEND_SURCHARGE
-
-    # Peak hours: 18:00 - 22:00
-    peak_start = 18 * 60
-    peak_end = 22 * 60
-
-    if start_minutes >= peak_start and end_minutes <= peak_end:
-        price *= 1 + PEAK_HOUR_SURCHARGE
-
-    return round(price)
+    return round(base_hourly_price * (duration_minutes / 60))

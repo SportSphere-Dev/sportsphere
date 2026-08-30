@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
@@ -7,7 +7,7 @@ from app.models.turf_slot import TurfSlot
 
 
 def release_expired_holds(db: Session):
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     expired_bookings = (
         db.query(Booking)

@@ -1,7 +1,7 @@
 import os
 import razorpay
 from dotenv import load_dotenv
-from datetime import datetime
+from datetime import datetime,timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -61,7 +61,7 @@ def create_payment(
 
     if (
         booking.hold_expires_at is None
-        or booking.hold_expires_at <= datetime.utcnow()
+        or booking.hold_expires_at <= datetime.now(timezone.utc)
     ):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -163,7 +163,7 @@ def verify_payment(
 
     if (
         booking.hold_expires_at is None
-        or booking.hold_expires_at <= datetime.utcnow()
+        or booking.hold_expires_at <= datetime.now(timezone.utc)
     ):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

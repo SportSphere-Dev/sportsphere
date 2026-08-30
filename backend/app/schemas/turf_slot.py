@@ -8,6 +8,7 @@ class TurfSlotCreate(BaseModel):
     slot_date: date
     start_time: time
     end_time: time
+    price: int
 
 class TurfSlotUpdate(BaseModel):
     slot_date: date | None = None

@@ -9,6 +9,7 @@ export { default as BookingInformation } from './components/BookingInformation';
 export { default as CancellationPolicyVisual } from './components/CancellationPolicyVisual';
 export { default as VenueFinalCta } from './components/VenueFinalCta';
 
+export { default as SportSelector } from './components/SportSelector';
 export { default as DateSelector } from './components/DateSelector';
 export { default as SlotGrid } from './components/SlotGrid';
 export { default as DurationSelector } from './components/DurationSelector';

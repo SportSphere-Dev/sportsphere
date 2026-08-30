@@ -14,12 +14,14 @@ export default function RegisterPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    phone: '',
     password: '',
     confirmPassword: '',
   });
   const [fieldErrors, setFieldErrors] = useState<{
     name?: string;
     email?: string;
+    phone?: string,
     password?: string;
     confirmPassword?: string;
   }>({});
@@ -44,6 +46,12 @@ export default function RegisterPage() {
       errors.email = 'Email address is required.';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
       errors.email = 'Please enter a valid email address.';
+    }
+
+    if (!formData.phone.trim()) {
+      errors.phone = 'Phone number is required.';
+    } else if (!/^[0-9]{10}$/.test(formData.phone.trim())) {
+      errors.phone = 'Please enter a valid 10-digit phone number.';
     }
 
     if (!formData.password) {
@@ -73,6 +81,7 @@ export default function RegisterPage() {
       await register({
         name: formData.name.trim(),
         email: formData.email.trim(),
+        phone: formData.phone.trim(),
         password: formData.password,
       });
 
@@ -197,6 +206,20 @@ export default function RegisterPage() {
                     value={formData.email}
                     onChange={handleChange}
                     error={fieldErrors.email}
+                    disabled={isLoading}
+                  />
+
+                  <Input
+                    label="Phone Number"
+                    type="tel"
+                    name="phone"
+                    id="phone"
+                    autoComplete="tel"
+                    required
+                    placeholder="9876543210"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    error={fieldErrors.phone}
                     disabled={isLoading}
                   />
 

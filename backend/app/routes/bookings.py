@@ -130,8 +130,8 @@ def create_booking(
         )
 
     # 5. Create booking
-    hold_expires_at = datetime.utcnow() + timedelta(minutes=5)
-
+    hold_expires_at = datetime.now(timezone.utc) + timedelta(minutes=5)
+    
     booking = Booking(
         user_id=current_user.id,
         slot_id=booking_data.slot_id,

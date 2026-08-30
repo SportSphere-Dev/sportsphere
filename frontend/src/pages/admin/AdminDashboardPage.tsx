@@ -1,26 +1,30 @@
-import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
+import { useState, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
 import axios from 'axios';
 import {
   Activity,
   Layers,
   CalendarCheck,
-  PlusCircle,
   Clock,
   Calendar,
   IndianRupee,
   RotateCcw,
   CheckCircle2,
-  XCircle,
   AlertTriangle,
   Ban,
   Radio,
-  Sparkles,
 } from 'lucide-react';
-import { Card, Button, Badge, Input } from '@/components/common';
+
+import { Card, Button, Badge } from '@/components/common';
 import { LoadingSpinner, EmptyState } from '@/components/feedback';
-import { PageTransition, FadeIn, StaggerContainer, StaggerItem } from '@/components/motion';
-import { getAllSlots, getAdminBookings, createSlot } from '@/features/booking/api';
+import {
+  PageTransition,
+  FadeIn,
+  StaggerContainer,
+  StaggerItem,
+} from '@/components/motion';
+
+import { getAllSlots, getAdminBookings } from '@/features/booking/api';
 import type { TurfSlotResponse, AdminBookingResponse } from '@/types';
 
 export default function AdminDashboardPage() {
@@ -34,165 +38,90 @@ export default function AdminDashboardPage() {
   const [slotsError, setSlotsError] = useState<string | null>(null);
   const [bookingsError, setBookingsError] = useState<string | null>(null);
 
-  // Form State for POST /slots/
-  const [formData, setFormData] = useState({
-    sport_id: 1,
-    slot_date: '',
-    start_time: '10:00:00',
-    end_time: '11:00:00',
-    price: 500,
-  });
-  const [fieldErrors, setFieldErrors] = useState<{
-    sport_id?: string;
-    slot_date?: string;
-    start_time?: string;
-    end_time?: string;
-    price?: string;
-  }>({});
-  const [isCreatingSlot, setIsCreatingSlot] = useState<boolean>(false);
-  const [createSlotError, setCreateSlotError] = useState<string | null>(null);
-  const [createSlotSuccess, setCreateSlotSuccess] = useState<string | null>(null);
+  // Active tab
+  const [activeTab, setActiveTab] = useState<'slots' | 'bookings'>('slots');
 
-  // Active View Tab
-  const [activeTab, setActiveTab] = useState<'slots' | 'bookings' | 'create'>('slots');
-
-  // Fetch Slots
+  // Fetch slots
   const fetchSlotsData = async () => {
     setIsLoadingSlots(true);
     setSlotsError(null);
+
     try {
-      const data = await getAllSlots();
-      setSlots(data);
-    } catch (err: unknown) {
-      if (axios.isAxiosError(err) && err.response?.status === 401) {
-        setSlotsError('Authentication required. Please sign in as an admin.');
+      const response = await getAllSlots();
+      setSlots(response);
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        setSlotsError(
+          error.response?.data?.detail ||
+            'Unable to load turf availability.'
+        );
       } else {
-        setSlotsError('Unable to load slots. Please check connection and try again.');
+        setSlotsError('Unable to load turf availability.');
       }
     } finally {
       setIsLoadingSlots(false);
     }
   };
 
-  // Fetch Bookings
+  // Fetch bookings
   const fetchBookingsData = async () => {
     setIsLoadingBookings(true);
     setBookingsError(null);
+
     try {
-      const data = await getAdminBookings();
-      setBookings(data);
-    } catch (err: unknown) {
-      if (axios.isAxiosError(err) && err.response?.status === 401) {
-        setBookingsError('Authentication required. Please sign in as an admin.');
+      const response = await getAdminBookings();
+      setBookings(response);
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        setBookingsError(
+          error.response?.data?.detail ||
+            'Unable to load bookings.'
+        );
       } else {
-        setBookingsError('Unable to load bookings. Please check connection and try again.');
+        setBookingsError('Unable to load bookings.');
       }
     } finally {
       setIsLoadingBookings(false);
     }
   };
 
+  // Initial dashboard load
   useEffect(() => {
     fetchSlotsData();
     fetchBookingsData();
   }, []);
 
-  // Derived Local Presentation Metrics
+  // Derived slot metrics
   const totalSlots = slots.length;
-  const availableSlotsCount = slots.filter((s) => s.is_available).length;
-  const unavailableSlotsCount = totalSlots - availableSlotsCount;
 
+  const availableSlotsCount = slots.filter(
+    (slot) => slot.is_available
+  ).length;
+
+  const unavailableSlotsCount = slots.filter(
+    (slot) => !slot.is_available
+  ).length;
+
+  // Derived booking metrics
   const totalBookingsCount = bookings.length;
-  const confirmedBookingsCount = bookings.filter((b) => b.status === 'confirmed').length;
-  const heldBookingsCount = bookings.filter((b) => b.status === 'held').length;
-  const cancelledBookingsCount = bookings.filter((b) => b.status === 'cancelled').length;
-  const totalBookingValue = bookings.reduce((sum, b) => sum + (b.total_price || 0), 0);
 
-  // Handle Form Change
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === 'sport_id' || name === 'price' ? Number(value) : value,
-    }));
-    setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
-    setCreateSlotError(null);
-    setCreateSlotSuccess(null);
-  };
+  const confirmedBookingsCount = bookings.filter(
+    (booking) => booking.status === 'confirmed'
+  ).length;
 
-  // Validate Slot Form
-  const validateForm = (): boolean => {
-    const errors: typeof fieldErrors = {};
+  const heldBookingsCount = bookings.filter(
+    (booking) => booking.status === 'held'
+  ).length;
 
-    if (!formData.sport_id || formData.sport_id <= 0) {
-      errors.sport_id = 'Sport ID must be a positive number.';
-    }
-    if (!formData.slot_date) {
-      errors.slot_date = 'Slot date is required.';
-    }
-    if (!formData.start_time) {
-      errors.start_time = 'Start time is required (e.g. 10:00:00).';
-    }
-    if (!formData.end_time) {
-      errors.end_time = 'End time is required (e.g. 11:00:00).';
-    }
-    if (!formData.price || formData.price <= 0) {
-      errors.price = 'Price must be greater than 0.';
-    }
+  const cancelledBookingsCount = bookings.filter(
+    (booking) => booking.status === 'cancelled'
+  ).length;
 
-    setFieldErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  // Submit POST /slots/
-  const handleCreateSlotSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-
-    setIsCreatingSlot(true);
-    setCreateSlotError(null);
-    setCreateSlotSuccess(null);
-
-    // Format start_time and end_time to ensure HH:mm:ss
-    let formattedStart = formData.start_time;
-    if (formattedStart.length === 5) formattedStart += ':00';
-
-    let formattedEnd = formData.end_time;
-    if (formattedEnd.length === 5) formattedEnd += ':00';
-
-    try {
-      await createSlot({
-        sport_id: Number(formData.sport_id),
-        slot_date: formData.slot_date,
-        start_time: formattedStart,
-        end_time: formattedEnd,
-        price: Number(formData.price),
-      });
-
-      setCreateSlotSuccess(`Slot on ${formData.slot_date} (${formattedStart} - ${formattedEnd}) created successfully.`);
-      // Refresh real slot dataset
-      fetchSlotsData();
-      // Reset date
-      setFormData((prev) => ({ ...prev, slot_date: '' }));
-    } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        if (err.response?.status === 404) {
-          setCreateSlotError('Sport not found. Please verify the Sport ID.');
-        } else if (err.response?.status === 409) {
-          setCreateSlotError('This time slot already exists for the given date.');
-        } else if (err.response?.status === 401) {
-          setCreateSlotError('Authentication required. Admin privileges required.');
-        } else {
-          setCreateSlotError('Failed to create slot. Please check the entered parameters.');
-        }
-      } else {
-        setCreateSlotError('An unexpected error occurred during slot creation.');
-      }
-    } finally {
-      setIsCreatingSlot(false);
-    }
-  };
-
+  const totalBookingValue = bookings.reduce(
+    (total, booking) => total + booking.total_price,
+    0
+  );
+  
   // Format Helper for Slot Display
   const formatSlotTime = (timeStr: string) => {
     try {
@@ -225,7 +154,7 @@ export default function AdminDashboardPage() {
               Management Dashboard
             </h1>
             <p className="mt-1 text-xs text-slate-400 sm:text-sm">
-              Monitor turf availability, inspect bookings, and provision match slots.
+              Monitor turf availability and inspect customer bookings.
             </p>
           </div>
 
@@ -332,17 +261,7 @@ export default function AdminDashboardPage() {
           <CalendarCheck size={14} /> Bookings Activity ({totalBookingsCount})
         </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab('create')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors ${
-            activeTab === 'create'
-              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-              : 'text-slate-400 hover:text-white hover:bg-slate-900'
-          }`}
-        >
-          <PlusCircle size={14} /> Create Slot
-        </button>
+        
       </div>
 
       {/* 4. Tab 1: Real Slots Overview */}
@@ -351,7 +270,7 @@ export default function AdminDashboardPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold text-white uppercase tracking-wide">
-                All Provisioned Turf Slots
+                Generated Turf Availability
               </h2>
               <span className="text-xs text-slate-500 font-mono">Source: GET /slots/</span>
             </div>
@@ -371,7 +290,7 @@ export default function AdminDashboardPage() {
             ) : slots.length === 0 ? (
               <EmptyState
                 title="No slots provisioned yet"
-                description="Use the 'Create Slot' tab to add available play times to the court schedule."
+                description="Availability is generated automatically when customers select a sport and date."
                 icon={<Layers size={24} className="text-slate-400" />}
               />
             ) : (
@@ -526,126 +445,6 @@ export default function AdminDashboardPage() {
       )}
 
       {/* 6. Tab 3: Create Slot Form */}
-      {activeTab === 'create' && (
-        <FadeIn direction="up">
-          <div className="max-w-xl">
-            <Card className="p-6 border-slate-800 bg-slate-900/90 shadow-2xl space-y-5">
-              <div className="border-b border-slate-800 pb-4">
-                <div className="flex items-center gap-2">
-                  <Badge variant="brand" className="text-[10px] px-2 py-0.5">
-                    <Sparkles size={11} className="mr-1 inline" /> PROVISIONING
-                  </Badge>
-                  <span className="text-xs font-mono text-slate-400">POST /slots/</span>
-                </div>
-                <h2 className="mt-2 text-lg font-bold text-white uppercase tracking-wide">
-                  Provision New Turf Slot
-                </h2>
-                <p className="mt-1 text-xs text-slate-400">
-                  Add a new play window to the live court availability schedule.
-                </p>
-              </div>
-
-              {createSlotSuccess && (
-                <div className="flex items-start gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-950/30 p-3.5 text-xs text-emerald-300">
-                  <CheckCircle2 size={16} className="shrink-0 mt-0.5" />
-                  <span>{createSlotSuccess}</span>
-                </div>
-              )}
-
-              {createSlotError && (
-                <div
-                  role="alert"
-                  className="flex items-start gap-2.5 rounded-xl border border-rose-500/30 bg-rose-950/30 p-3.5 text-xs text-rose-300"
-                >
-                  <XCircle size={16} className="shrink-0 mt-0.5" />
-                  <span>{createSlotError}</span>
-                </div>
-              )}
-
-              <form onSubmit={handleCreateSlotSubmit} noValidate className="space-y-4">
-                <Input
-                  label="Sport Identifier (ID)"
-                  type="number"
-                  name="sport_id"
-                  id="sport_id"
-                  required
-                  min={1}
-                  value={formData.sport_id}
-                  onChange={handleInputChange}
-                  error={fieldErrors.sport_id}
-                  disabled={isCreatingSlot}
-                />
-
-                <Input
-                  label="Slot Date (YYYY-MM-DD)"
-                  type="date"
-                  name="slot_date"
-                  id="slot_date"
-                  required
-                  value={formData.slot_date}
-                  onChange={handleInputChange}
-                  error={fieldErrors.slot_date}
-                  disabled={isCreatingSlot}
-                />
-
-                <div className="grid grid-cols-2 gap-3">
-                  <Input
-                    label="Start Time (HH:mm:ss)"
-                    type="text"
-                    name="start_time"
-                    id="start_time"
-                    required
-                    placeholder="10:00:00"
-                    value={formData.start_time}
-                    onChange={handleInputChange}
-                    error={fieldErrors.start_time}
-                    disabled={isCreatingSlot}
-                  />
-
-                  <Input
-                    label="End Time (HH:mm:ss)"
-                    type="text"
-                    name="end_time"
-                    id="end_time"
-                    required
-                    placeholder="11:00:00"
-                    value={formData.end_time}
-                    onChange={handleInputChange}
-                    error={fieldErrors.end_time}
-                    disabled={isCreatingSlot}
-                  />
-                </div>
-
-                <Input
-                  label="Price (INR ₹)"
-                  type="number"
-                  name="price"
-                  id="price"
-                  required
-                  min={1}
-                  value={formData.price}
-                  onChange={handleInputChange}
-                  error={fieldErrors.price}
-                  disabled={isCreatingSlot}
-                />
-
-                <div className="pt-2">
-                  <Button
-                    type="submit"
-                    size="lg"
-                    isLoading={isCreatingSlot}
-                    disabled={isCreatingSlot}
-                    className="w-full justify-center shadow-xl shadow-emerald-500/25"
-                    leftIcon={!isCreatingSlot && <PlusCircle size={16} />}
-                  >
-                    {isCreatingSlot ? 'Creating Slot...' : 'Create Turf Slot'}
-                  </Button>
-                </div>
-              </form>
-            </Card>
-          </div>
-        </FadeIn>
-      )}
     </PageTransition>
   );
 }

@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import axios from 'axios';
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 import {
   ShieldAlert,
   Clock,
@@ -75,6 +80,22 @@ export default function PaymentPage() {
     return () => clearInterval(interval);
   }, [booking?.hold_expires_at, isConfirmed]);
 
+  const loadRazorpay = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (window.Razorpay) {
+        resolve(true);
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+
+      document.body.appendChild(script);
+    });
+  };
+
   // Initialize Payment session via POST /payments/
   const initPayment = async () => {
     if (!booking?.id) return;
@@ -121,73 +142,127 @@ export default function PaymentPage() {
     }
   }, [booking?.id]);
 
-  // Handle simulated verification via POST /payments/verify
-  const handleSimulatePayment = async () => {
-    if (!payment?.id || isVerifyingPayment || timeLeft.isExpired) return;
+  // Open Razorpay Checkout and verify the payment via POST /payments/verify
+  const handlePayment = async () => {
+  if (!booking || !payment || isVerifyingPayment || timeLeft.isExpired) return;
 
-    setIsVerifyingPayment(true);
-    setPaymentError(null);
+  setIsVerifyingPayment(true);
+  setPaymentError(null);
 
-    try {
-      const verifiedRecord = await verifyPayment({
-        payment_id: payment.id,
-        success: true,
-      });
+  try {
+    const razorpayLoaded = await loadRazorpay();
 
-      setPayment(verifiedRecord);
-      setIsConfirmed(true);
-    } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        const status = err.response?.status;
-        const detail = err.response?.data?.detail;
-
-        if (status === 401) {
-          setPaymentError('Authentication required. Please sign in again.');
-        } else if (status === 404) {
-          setPaymentError('Booking or payment record could not be found.');
-        } else if (status === 409) {
-          setPaymentError(
-            typeof detail === 'string'
-              ? detail
-              : 'Payment has already been processed or booking is no longer held.'
-          );
-        } else if (status === 422) {
-          setPaymentError('Invalid verification parameters.');
-        } else if (!err.response) {
-          setPaymentError('Unable to connect to the payment verification service.');
-        } else {
-          setPaymentError('Payment verification failed. Please try again.');
-        }
-      } else {
-        setPaymentError('An unexpected error occurred during verification.');
-      }
-    } finally {
-      setIsVerifyingPayment(false);
+    if (!razorpayLoaded) {
+      setPaymentError(
+        'Unable to load Razorpay Checkout. Please check your internet connection and try again.'
+      );
+      return;
     }
-  };
 
+    if (!payment.razorpay_key_id || !payment.razorpay_order_id) {
+      setPaymentError('Payment order information is missing.');
+      return;
+    }
+
+    const options = {
+      key: payment.razorpay_key_id,
+      amount: payment.amount * 100,
+      currency: 'INR',
+      name: 'SportSphere',
+      description: `Booking #${booking.id}`,
+      order_id: payment.razorpay_order_id,
+
+      handler: async (response: {
+        razorpay_payment_id: string;
+        razorpay_order_id: string;
+        razorpay_signature: string;
+      }) => {
+        try {
+          const verifiedRecord = await verifyPayment({
+            payment_id: payment.id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_signature: response.razorpay_signature,
+          });
+
+          setPayment(verifiedRecord);
+          setIsConfirmed(true);
+        } catch (err: unknown) {
+          if (axios.isAxiosError(err)) {
+            const detail = err.response?.data?.detail;
+
+            setPaymentError(
+              typeof detail === 'string'
+                ? detail
+                : 'Payment verification failed. Please contact support if money was deducted.'
+            );
+          } else {
+            setPaymentError(
+              'Payment verification failed. Please contact support if money was deducted.'
+            );
+          }
+        } finally {
+          setIsVerifyingPayment(false);
+        }
+      },
+
+      modal: {
+        ondismiss: () => {
+          setIsVerifyingPayment(false);
+        },
+      },
+
+      theme: {
+        color: '#10b981',
+      },
+    };
+
+    const razorpay = new window.Razorpay(options);
+
+    razorpay.on(
+      'payment.failed',
+      (response: {
+        error?: {
+          description?: string;
+        };
+      }) => {
+        setPaymentError(
+          response.error?.description ||
+            'Payment failed. Please try again.'
+        );
+        setIsVerifyingPayment(false);
+      }
+    );
+
+    razorpay.open();
+  } catch {
+    setPaymentError('Unable to start the payment process.');
+    setIsVerifyingPayment(false);
+  }
+};
+
+  const formatTimerDigits = (val: number) => val.toString().padStart(2, '0');
+
+  // Booking is required for this page
   if (!booking) {
     return (
-      <PageTransition className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-slate-950 p-4">
-        <Card className="max-w-md p-8 text-center border-slate-800 bg-slate-900/90 shadow-2xl">
-          <AlertTriangle size={36} className="mx-auto text-amber-400 mb-3" />
-          <h2 className="text-lg font-bold text-white">No Active Booking Session</h2>
-          <p className="mt-2 text-xs text-slate-400">
-            Please select an available match slot to initiate a temporary hold and continue to checkout.
+      <PageTransition className="min-h-screen bg-slate-950 py-12 px-4 flex items-center justify-center">
+        <Card className="p-8 border-slate-800 bg-slate-900 text-center">
+          <h1 className="text-xl font-bold text-white">
+            Booking not found
+          </h1>
+          <p className="mt-2 text-sm text-slate-400">
+            Please return to the booking page and select a slot again.
           </p>
-          <div className="mt-6">
-            <Link to="/booking">
-              <Button size="md" className="w-full justify-center">
-                Back to Schedule
-              </Button>
-            </Link>
-          </div>
+          <Link to="/booking" className="inline-block mt-6">
+            <Button>
+              Back to Booking
+            </Button>
+          </Link>
         </Card>
       </PageTransition>
     );
   }
-
-  const formatTimerDigits = (val: number) => val.toString().padStart(2, '0');
 
   // Confirmation Success View
   if (isConfirmed) {
@@ -201,8 +276,8 @@ export default function PaymentPage() {
               </div>
 
               <div>
-                <Badge variant="success" className="text-xs px-3 py-1">
-                  Payment Simulation Successful
+                <Badge variant="success">
+                  Payment Successful
                 </Badge>
                 <h1 className="mt-3 text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">
                   Booking Confirmed
@@ -368,7 +443,10 @@ export default function PaymentPage() {
               <Sparkles size={18} />
             </div>
             <div className="text-xs text-slate-400">
-              <span className="font-semibold text-white">Payment Simulation Mode:</span> Direct payment gateway integration (Razorpay) will be connected in a future release. Activating the simulated payment will issue a real verification request to confirm your held booking.
+              <span className="font-semibold text-white">
+                Secure Razorpay Payment:
+              </span>{' '}
+              Complete your payment through Razorpay to confirm your booking.
             </div>
           </Card>
 
@@ -439,21 +517,20 @@ export default function PaymentPage() {
                   size="lg"
                   disabled={!payment || isVerifyingPayment || timeLeft.isExpired}
                   isLoading={isVerifyingPayment}
-                  onClick={handleSimulatePayment}
+                  onClick={handlePayment}
                   className="w-full justify-center shadow-xl shadow-emerald-500/25"
                   leftIcon={!isVerifyingPayment && <CreditCard size={18} />}
                 >
                   {timeLeft.isExpired
                     ? 'Hold Expired — Rebook Slot'
                     : isVerifyingPayment
-                    ? 'Verifying Payment...'
-                    : `Simulate Successful Payment (₹${(payment?.amount ?? booking.total_price).toLocaleString('en-IN')})`}
+                      ? 'Verifying Payment...'
+                      : `Pay ₹${(payment?.amount ?? booking.total_price).toLocaleString('en-IN')}`}
                 </Button>
               )}
-
               <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500">
                 <ShieldAlert size={12} className="text-slate-400" />
-                <span>Simulated transaction will transition booking status to confirmed.</span>
+                <span>Secure payment will transition your booking status to confirmed after verification.</span>
               </div>
             </div>
           </Card>

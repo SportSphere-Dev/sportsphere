@@ -6,24 +6,28 @@ import { Sparkles, AlertCircle, RotateCcw, CalendarX } from 'lucide-react';
 import { PageTransition, FadeIn } from '@/components/motion';
 import {
   DateSelector,
+  SportSelector,
   SlotGrid,
   DurationSelector,
   PlayerCountSelector,
   AddOnsSelector,
   BookingSummary,
   getSlots,
+  getSports,
   createBooking,
 } from '@/features/booking';
 import { Badge, Button } from '@/components/common';
 import { LoadingSpinner, EmptyState } from '@/components/feedback';
 import type { Slot } from '@/types';
 
-const DEFAULT_SPORT_ID = 1;
 
 export default function BookingPage() {
   const navigate = useNavigate();
-
+  
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [sports, setSports] = useState<Awaited<ReturnType<typeof getSports>>>([]);
+  const [selectedSportId, setSelectedSportId] = useState<number | null>(null);
+  const [isLoadingSports, setIsLoadingSports] = useState<boolean>(true);
   const [slots, setSlots] = useState<Slot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [durationMinutes, setDurationMinutes] = useState<number>(60);
@@ -36,42 +40,78 @@ export default function BookingPage() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const fetchSlots = useCallback(async (date: Date, signal?: AbortSignal) => {
-    setIsLoadingSlots(true);
-    setSlotError(null);
-    setSubmitError(null);
-
-    const formattedDate = format(date, 'yyyy-MM-dd');
-
+  useEffect(() => {
+  const loadSports = async () => {
     try {
-      const fetchedSlots = await getSlots({
-        sportId: DEFAULT_SPORT_ID,
-        date: formattedDate,
-        signal,
-      });
+      setIsLoadingSports(true);
 
-      setSlots(fetchedSlots);
-      setSelectedSlot(null);
-    } catch (err: unknown) {
-      if (axios.isCancel(err)) {
-        return;
+      const fetchedSports = await getSports();
+
+      setSports(fetchedSports);
+
+      if (fetchedSports.length > 0) {
+        setSelectedSportId(fetchedSports[0].id);
       }
-      setSlots([]);
-      setSelectedSlot(null);
-      setSlotError('Unable to load available slots. Please check your connection and try again.');
+    } catch {
+      setSports([]);
+      setSelectedSportId(null);
     } finally {
-      setIsLoadingSlots(false);
+      setIsLoadingSports(false);
     }
+  };
+
+    loadSports();
   }, []);
 
+  const fetchSlots = useCallback(
+    async (date: Date, sportId: number, signal?: AbortSignal) => {
+      setIsLoadingSlots(true);
+      setSlotError(null);
+      setSubmitError(null);
+
+      const formattedDate = format(date, 'yyyy-MM-dd');
+
+      try {
+        const fetchedSlots = await getSlots({
+          sportId,
+          date: formattedDate,
+          signal,
+        });
+
+        setSlots(fetchedSlots);
+        setSelectedSlot(null);
+      } catch (err: unknown) {
+        if (axios.isCancel(err)) {
+          return;
+        }
+
+        setSlots([]);
+        setSelectedSlot(null);
+        setSlotError(
+          'Unable to load available slots. Please check your connection and try again.'
+        );
+      } finally {
+        setIsLoadingSlots(false);
+      }
+    },
+    []
+  );
+
   useEffect(() => {
+    if (selectedSportId === null) {
+      setSlots([]);
+      setSelectedSlot(null);
+      return;
+    }
+
     const controller = new AbortController();
-    fetchSlots(selectedDate, controller.signal);
+
+    fetchSlots(selectedDate, selectedSportId, controller.signal);
 
     return () => {
       controller.abort();
     };
-  }, [selectedDate, fetchSlots]);
+  }, [selectedDate, selectedSportId, fetchSlots]);
 
   const handleToggleAddOn = (id: string) => {
     setSelectedAddOns((prev) =>
@@ -80,7 +120,15 @@ export default function BookingPage() {
   };
 
   const handleRetry = () => {
-    fetchSlots(selectedDate);
+    if (selectedSportId !== null) {
+      fetchSlots(selectedDate, selectedSportId);
+    }
+  };
+
+  const handleSportChange = (sportId: number) => {
+    setSelectedSportId(sportId);
+    setSelectedSlot(null);
+    setSlots([]);
   };
 
   const handleBookingSubmit = async () => {
@@ -94,6 +142,7 @@ export default function BookingPage() {
       const bookingResponse = await createBooking({
         slot_id: slotIdNum,
         number_of_players: playerCount,
+        add_ons: [],
       });
 
       // Navigate to payment passing the held booking record & contextual display details
@@ -118,7 +167,9 @@ export default function BookingPage() {
         } else if (status === 409) {
           setSubmitError('This slot is already booked or held by another player. Please pick another slot.');
           // Refresh slot grid to reflect updated availability
-          fetchSlots(selectedDate);
+          if (selectedSportId !== null) {
+            fetchSlots(selectedDate, selectedSportId);
+          }
         } else if (status === 422) {
           setSubmitError('Invalid booking parameters. Number of players must be between 1 and 20.');
         } else if (!err.response) {
@@ -164,6 +215,14 @@ export default function BookingPage() {
           
           {/* Left: Interactive Selection Flow (Col 8) */}
           <div className="space-y-8 lg:col-span-8">
+            <FadeIn direction="up" delay={0.05}>
+              <SportSelector
+                sports={sports}
+                selectedSportId={selectedSportId}
+                onSelectSport={handleSportChange}
+                disabled={isLoadingSports}
+              />
+            </FadeIn>
             <FadeIn direction="up" delay={0.05}>
               <DateSelector
                 selectedDate={selectedDate}

@@ -65,7 +65,7 @@ export function mapBackendSlot(backendSlot: BackendSlotResponse): Slot {
     startTime: backendSlot.start_time,
     endTime: backendSlot.end_time,
     period,
-    status: backendSlot.status || 'available',
+    status: backendSlot.is_available ? 'available' : 'blocked',
     price: backendSlot.price,
     isPeak: hour >= 18,
   };
@@ -75,7 +75,7 @@ export async function getSlots({ sportId, date, signal }: GetSlotsParams): Promi
   const response = await apiClient.get<BackendSlotResponse[]>('/slots/', {
     params: {
       sport_id: sportId,
-      date,
+      slot_date: date,
     },
     signal,
   });
@@ -149,4 +149,20 @@ export async function getAdminBookings(): Promise<AdminBookingResponse[]> {
 export async function createSlot(payload: CreateSlotRequest): Promise<TurfSlotResponse> {
   const response = await apiClient.post<TurfSlotResponse>('/slots/', payload);
   return response.data;
+}
+
+export interface SportResponse {
+  id: number;
+  name: string;
+  description?: string;
+  price_per_hour: number;
+  is_active: boolean;
+}
+
+export async function getSports(): Promise<SportResponse[]> {
+  const response = await apiClient.get<SportResponse[]>('/sports/');
+
+  return Array.isArray(response.data)
+    ? response.data.filter((sport) => sport.is_active)
+    : [];
 }

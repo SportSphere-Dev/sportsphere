@@ -14,7 +14,7 @@ from app.dependencies import require_admin
 from app.models.user import User
 from app.models.booking import Booking
 from app.services.booking_service import release_expired_holds
-from app.services.pricing_service import calculate_slot_price
+from app.services.slot_service import generate_daily_slots
 
 router = APIRouter(
     prefix="/slots",
@@ -29,6 +29,33 @@ def get_slots(
     db: Session = Depends(get_db),
 ):
     release_expired_holds(db)
+
+    # When customer selects a sport and date,
+    # automatically generate the standard daily slots.
+    if sport_id is not None and slot_date is not None:
+        sport = (
+            db.query(Sport)
+            .filter(
+                Sport.id == sport_id,
+                Sport.is_active.is_(True),
+            )
+            .first()
+        )
+
+        if not sport:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Sport not found",
+            )
+
+        return generate_daily_slots(
+            db=db,
+            sport=sport,
+            slot_date=slot_date,
+        )
+
+    # Keep the existing behaviour for requests
+    # without both sport_id and slot_date.
     query = db.query(TurfSlot)
 
     if sport_id is not None:
@@ -81,19 +108,14 @@ def create_slot(
             detail="This time slot already exists",
         )
 
-    calculated_price = calculate_slot_price(
-        base_hourly_price=sport.price_per_hour,
-        slot_date=slot_data.slot_date,
-        start_time=slot_data.start_time,
-        end_time=slot_data.end_time,
-    )
+    
 
     slot = TurfSlot(
         sport_id=slot_data.sport_id,
         slot_date=slot_data.slot_date,
         start_time=slot_data.start_time,
         end_time=slot_data.end_time,
-        price=calculated_price,
+        price=slot_data.price,
     )
 
     db.add(slot)
